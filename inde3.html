@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Monterrey Weather</title>
+    <script src="script4.js"></script>
+	<style>
+		body {
+			margin: 0;
+			min-height: 100vh;
+			display: grid;
+			place-items: center;
+			background: #f3f6f8;
+			color: #202b33;
+			font-family: Arial, sans-serif;
+		}
+
+		main {
+			width: min(100% - 40px, 420px);
+			padding: 28px;
+			box-sizing: border-box;
+			background: white;
+			border: 1px solid #e1e7eb;
+			border-radius: 10px;
+		}
+
+		h1 {
+			margin: 0 0 8px;
+			font-size: 24px;
+		}
+
+		p {
+			color: #5b6870;
+		}
+
+		label {
+			display: block;
+			margin: 20px 0 8px;
+			font-weight: 600;
+		}
+
+		input, button {
+			width: 100%;
+			min-height: 44px;
+			box-sizing: border-box;
+			border-radius: 6px;
+			font: inherit;
+		}
+
+		input {
+			padding: 10px 12px;
+			border: 1px solid #bac5cc;
+		}
+
+		button {
+			margin-top: 12px;
+			border: 0;
+			background: #176b62;
+			color: white;
+			font-weight: 600;
+			cursor: pointer;
+		}
+
+		button:hover {
+			background: #11564f;
+		}
+
+		button:disabled {
+			cursor: wait;
+			opacity: 0.7;
+		}
+
+		#message {
+			min-height: 24px;
+			margin: 16px 0 0;
+		}
+
+		#weather {
+			margin-top: 18px;
+			padding-top: 18px;
+			border-top: 1px solid #e1e7eb;
+		}
+
+		#weather h2 {
+			margin: 0 0 12px;
+			font-size: 20px;
+		}
+
+		#weather p {
+			margin: 8px 0;
+		}
+
+		[hidden] {
+			display: none;
+		}
+	</style>
+</head>
+<body>
+	<main>
+		<h1>Monterrey Weather</h1>
+		<p>Check the current weather in Monterrey, Mexico.</p>
+
+		<form id="weather-form">
+			<label for="api-key">OpenWeather API key</label>
+			<input id="api-key" type="password" placeholder="Paste your API key" autocomplete="off" required>
+			<button id="get-weather" type="submit">Get Weather</button>
+		</form>
+
+		<p id="message" role="status" aria-live="polite"></p>
+
+		<section id="weather" aria-live="polite" hidden>
+			<h2 id="city"></h2>
+			<p>Temperature: <span id="temperature"></span> °C</p>
+			<p>Description: <span id="description"></span></p>
+			<p>Humidity: <span id="humidity"></span>%</p>
+		</section>
+	</main>
+
+	<script>
+		const form = document.getElementById("weather-form");
+		const apiKeyInput = document.getElementById("api-key");
+		const button = document.getElementById("get-weather");
+		const message = document.getElementById("message");
+		const weatherSection = document.getElementById("weather");
+
+		form.addEventListener("submit", async function (event) {
+			event.preventDefault();
+
+			const apiKey = apiKeyInput.value.trim();
+			if (!apiKey) {
+				message.textContent = "Please enter your OpenWeather API key.";
+				weatherSection.hidden = true;
+				return;
+			}
+
+			message.textContent = "Loading weather...";
+			weatherSection.hidden = true;
+			button.disabled = true;
+
+			try {
+				const url = "https://api.openweathermap.org/data/2.5/weather?q=Monterrey,mx&appid="
+					+ encodeURIComponent(apiKey)
+					+ "&units=metric";
+				const response = await fetch(url);
+				const data = await response.json();
+
+				if (!response.ok) {
+					if (response.status === 401) {
+						throw new Error("The API key is invalid. Check it and try again.");
+					}
+					throw new Error(data.message || "Could not get the weather. Please try again.");
+				}
+
+				document.getElementById("city").textContent = data.name + ", " + data.sys.country;
+				document.getElementById("temperature").textContent = Math.round(data.main.temp);
+				document.getElementById("description").textContent = data.weather[0].description;
+				document.getElementById("humidity").textContent = data.main.humidity;
+				weatherSection.hidden = false;
+				message.textContent = "";
+			} catch (error) {
+				message.textContent = error.message || "A network error occurred. Please try again.";
+			} finally {
+				button.disabled = false;
+			}
+		});
+	</script>
+</body>
+</html>
